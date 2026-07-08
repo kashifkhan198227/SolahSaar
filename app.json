@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "Solah Saar",
+    "slug": "solah-saar",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0D0F0A",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.kashifkhan198227.solahsaar",
+      "predictiveBackGestureEnabled": false,
+      "permissions": []
+    },
+    "web": {}
+  }
+}
