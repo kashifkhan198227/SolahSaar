@@ -1,5 +1,12 @@
 // Solah Saar (Sholo Gutti) — carved-wood board theme
 
+// Display names shown to the user. The underlying PlayerColor values stay
+// 'orange'/'black' throughout the engine — only the label changes.
+export const PLAYER_LABEL: Record<'orange' | 'black', string> = {
+  orange: 'Red',
+  black: 'Blue',
+};
+
 export const COLORS = {
   // ── Board ──────────────────────────────────────────────────────────────
   boardBackground: '#1B2A1E',   // deep forest wood

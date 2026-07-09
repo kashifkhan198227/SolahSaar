@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS, SPACING, BORDER_RADIUS } from '../utils/theme';
+import { COLORS, PLAYER_LABEL, SPACING, BORDER_RADIUS } from '../utils/theme';
 import { useGameStore } from '../store/gameStore';
 import { computeRevivalTargets, deadCount, onBoardCount, PlayerColor } from '../engine/GameEngine';
 import Board from '../components/Board';
@@ -66,11 +66,11 @@ export default function BoardScreen({ onPause, onVictory }: BoardScreenProps) {
       <View style={styles.hud}>
         <View style={styles.playerBadge}>
           <View style={[styles.dot, { backgroundColor: COLORS.orange }]} />
-          <Text style={styles.hudText}>Orange{aiLabel('orange')} · {onBoardCount(gameState, 'orange')} on board · {deadCount(gameState, 'orange')} out</Text>
+          <Text style={styles.hudText}>{PLAYER_LABEL.orange}{aiLabel('orange')} · {onBoardCount(gameState, 'orange')} on board · {deadCount(gameState, 'orange')} out</Text>
         </View>
         <View style={styles.playerBadge}>
           <View style={[styles.dot, { backgroundColor: COLORS.black, borderWidth: 1, borderColor: COLORS.blackRing }]} />
-          <Text style={styles.hudText}>Black{aiLabel('black')} · {onBoardCount(gameState, 'black')} on board · {deadCount(gameState, 'black')} out</Text>
+          <Text style={styles.hudText}>{PLAYER_LABEL.black}{aiLabel('black')} · {onBoardCount(gameState, 'black')} on board · {deadCount(gameState, 'black')} out</Text>
         </View>
         <TouchableOpacity onPress={onPause} style={styles.pauseButton}>
           <Text style={styles.pauseText}>II</Text>
@@ -80,17 +80,17 @@ export default function BoardScreen({ onPause, onVictory }: BoardScreenProps) {
       <View style={styles.turnBanner}>
         {gameState.turnSkipped != null && (
           <Text style={styles.skipText}>
-            {gameState.turnSkipped === 'orange' ? 'Orange' : 'Black'} had no legal move — turn skipped
+            {PLAYER_LABEL[gameState.turnSkipped]} had no legal move — turn skipped
           </Text>
         )}
         <Text style={styles.turnText}>
           {isAIThinking
-            ? `${gameState.currentPlayer === 'orange' ? 'Orange' : 'Black'} (AI) is thinking…`
+            ? `${PLAYER_LABEL[gameState.currentPlayer]} (AI) is thinking…`
             : isReviving
-            ? `${gameState.reviveEligiblePlayer === 'orange' ? 'Orange' : 'Black'} reached the edge — tap an empty node to revive a soldier`
+            ? `${PLAYER_LABEL[gameState.reviveEligiblePlayer!]} reached the edge — tap an empty node to revive a soldier`
             : gameState.chainingSoldierId != null
-            ? `${gameState.currentPlayer === 'orange' ? 'Orange' : 'Black'} — keep capturing!`
-            : `${gameState.currentPlayer === 'orange' ? "Orange's" : "Black's"} turn`}
+            ? `${PLAYER_LABEL[gameState.currentPlayer]} — keep capturing!`
+            : `${PLAYER_LABEL[gameState.currentPlayer]}'s turn`}
         </Text>
       </View>
 

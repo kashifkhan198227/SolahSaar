@@ -6,10 +6,11 @@ interface HomeScreenProps {
   hasSavedGame: boolean;
   onNewGame: () => void;
   onResumeGame: () => void;
+  onPlayOnline: () => void;
   onRules: () => void;
 }
 
-export default function HomeScreen({ hasSavedGame, onNewGame, onResumeGame, onRules }: HomeScreenProps) {
+export default function HomeScreen({ hasSavedGame, onNewGame, onResumeGame, onPlayOnline, onRules }: HomeScreenProps) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -25,6 +26,9 @@ export default function HomeScreen({ hasSavedGame, onNewGame, onResumeGame, onRu
         )}
         <TouchableOpacity style={[styles.button, styles.primaryButton]} onPress={onNewGame}>
           <Text style={styles.buttonText}>New Game</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.button, styles.primaryButton]} onPress={onPlayOnline}>
+          <Text style={styles.buttonText}>Play Online</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.button} onPress={onRules}>
           <Text style={styles.buttonTextSecondary}>Rules</Text>

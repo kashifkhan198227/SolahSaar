@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { COLORS, SPACING, BORDER_RADIUS } from '../utils/theme';
+import { COLORS, PLAYER_LABEL, SPACING, BORDER_RADIUS } from '../utils/theme';
 import { PlayerColor } from '../engine/GameEngine';
 
 interface VictoryScreenProps {
@@ -16,7 +16,7 @@ export default function VictoryScreen({ winner, onPlayAgain, onHome }: VictorySc
       {!isDraw && (
         <View style={[styles.badge, { backgroundColor: winner === 'orange' ? COLORS.orange : COLORS.black, borderColor: winner === 'black' ? COLORS.blackRing : 'transparent', borderWidth: winner === 'black' ? 2 : 0 }]} />
       )}
-      <Text style={styles.title}>{isDraw ? 'Draw' : `${winner === 'orange' ? 'Orange' : 'Black'} Wins!`}</Text>
+      <Text style={styles.title}>{isDraw ? 'Draw' : `${PLAYER_LABEL[winner!]} Wins!`}</Text>
       <Text style={styles.subtitle}>
         {isDraw ? 'Neither side has a legal move left.' : 'All opposing soldiers were eliminated.'}
       </Text>

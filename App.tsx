@@ -2,27 +2,32 @@ import React, { useState, useEffect } from 'react';
 import { StatusBar, View, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useGameStore, AIConfig } from './src/store/gameStore';
+import { useOnlineStore } from './src/store/onlineStore';
 import { COLORS } from './src/utils/theme';
 import { PlayerColor } from './src/engine/GameEngine';
 
 import HomeScreen from './src/screens/HomeScreen';
 import GameSetupScreen from './src/screens/GameSetupScreen';
 import BoardScreen from './src/screens/BoardScreen';
+import OnlineLobbyScreen from './src/screens/OnlineLobbyScreen';
+import OnlineBoardScreen from './src/screens/OnlineBoardScreen';
 import PauseScreen from './src/screens/PauseScreen';
 import RulesScreen from './src/screens/RulesScreen';
 import VictoryScreen from './src/screens/VictoryScreen';
 
-type Screen = 'home' | 'setup' | 'board' | 'rules' | 'victory';
+type Screen = 'home' | 'setup' | 'board' | 'onlineLobby' | 'onlineBoard' | 'rules' | 'victory';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('home');
   const [pauseVisible, setPauseVisible] = useState(false);
   const [victoryWinner, setVictoryWinner] = useState<PlayerColor | null>(null);
   const [victoryReached, setVictoryReached] = useState(false);
+  const [victoryWasOnline, setVictoryWasOnline] = useState(false);
   const [rulesReturnScreen, setRulesReturnScreen] = useState<Screen>('home');
   const [lastAiConfig, setLastAiConfig] = useState<AIConfig | null>(null);
 
-  const { gameState, hasSavedGame, startGame, loadGame, resetGame, checkSavedGame } = useGameStore();
+  const { hasSavedGame, startGame, loadGame, resetGame, checkSavedGame } = useGameStore();
+  const { leaveAndReset: leaveOnlineGame } = useOnlineStore();
 
   useEffect(() => {
     checkSavedGame();
@@ -41,18 +46,32 @@ export default function App() {
 
   const handleVictory = (winner: PlayerColor | null) => {
     setVictoryWinner(winner);
+    setVictoryWasOnline(false);
+    setVictoryReached(true);
+    setScreen('victory');
+  };
+
+  const handleOnlineVictory = (winner: PlayerColor | null) => {
+    setVictoryWinner(winner);
+    setVictoryWasOnline(true);
     setVictoryReached(true);
     setScreen('victory');
   };
 
   const handlePlayAgain = () => {
     setVictoryReached(false);
-    startGame(undefined, lastAiConfig);
-    setScreen('board');
+    if (victoryWasOnline) {
+      leaveOnlineGame();
+      setScreen('onlineLobby');
+    } else {
+      startGame(undefined, lastAiConfig);
+      setScreen('board');
+    }
   };
 
   const goHome = () => {
     resetGame();
+    leaveOnlineGame();
     setVictoryReached(false);
     setScreen('home');
   };
@@ -70,6 +89,7 @@ export default function App() {
             hasSavedGame={hasSavedGame}
             onNewGame={() => setScreen('setup')}
             onResumeGame={handleResumeGame}
+            onPlayOnline={() => setScreen('onlineLobby')}
             onRules={() => openRules('home')}
           />
         );
@@ -90,11 +110,17 @@ export default function App() {
           </>
         );
 
+      case 'onlineLobby':
+        return <OnlineLobbyScreen onConnected={() => setScreen('onlineBoard')} onBack={() => setScreen('home')} />;
+
+      case 'onlineBoard':
+        return <OnlineBoardScreen onLeave={() => setScreen('home')} onVictory={handleOnlineVictory} />;
+
       case 'rules':
         return <RulesScreen onBack={() => setScreen(rulesReturnScreen)} />;
 
       case 'victory':
-        if (!gameState || !victoryReached) return null;
+        if (!victoryReached) return null;
         return <VictoryScreen winner={victoryWinner} onPlayAgain={handlePlayAgain} onHome={goHome} />;
 
       default:

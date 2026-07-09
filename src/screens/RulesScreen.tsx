@@ -10,7 +10,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: 'Board Setup',
     body: [
-      'Orange and Black soldiers are placed at their starting positions on the board.',
+      'Red and Blue soldiers are placed at their starting positions on the board.',
       'Soldiers occupy designated nodes; the board lines are the movement paths.',
       'Both players have an equal number of soldiers (16 each).',
     ],

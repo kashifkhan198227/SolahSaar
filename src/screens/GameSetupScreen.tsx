@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { COLORS, SPACING, BORDER_RADIUS } from '../utils/theme';
+import { COLORS, PLAYER_LABEL, SPACING, BORDER_RADIUS } from '../utils/theme';
 import { PlayerColor } from '../engine/GameEngine';
 import { AILevel } from '../engine/AIPlayer';
 import { AIConfig } from '../store/gameStore';
@@ -57,7 +57,7 @@ export default function GameSetupScreen({ onStart, onBack }: GameSetupScreenProp
                   style={[styles.choice, humanColor === opt && styles.choiceActive]}
                   onPress={() => setHumanColor(opt)}
                 >
-                  <Text style={styles.choiceText}>{opt === 'orange' ? 'Orange' : 'Black'}</Text>
+                  <Text style={styles.choiceText}>{PLAYER_LABEL[opt]}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -85,7 +85,7 @@ export default function GameSetupScreen({ onStart, onBack }: GameSetupScreenProp
               style={[styles.choice, choice === opt && styles.choiceActive]}
               onPress={() => setChoice(opt)}
             >
-              <Text style={styles.choiceText}>{opt === 'random' ? 'Random' : opt === 'orange' ? 'Orange' : 'Black'}</Text>
+              <Text style={styles.choiceText}>{opt === 'random' ? 'Random' : PLAYER_LABEL[opt]}</Text>
             </TouchableOpacity>
           ))}
         </View>
