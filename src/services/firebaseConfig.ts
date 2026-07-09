@@ -17,7 +17,7 @@
  */
 
 export const FIREBASE_CONFIG = {
-  apiKey: 'AIzaSyAh2LQYm_P54sP6Vud8pCAnoSWiRh4FU0c',
+  apiKey: 'AIzaSyAh2lQYm_P54sP6Vud8pCAnoSWiRh4FU0c',
   authDomain: 'solahsaar.firebaseapp.com',
   projectId: 'solahsaar',
   storageBucket: 'solahsaar.firebasestorage.app',

@@ -189,10 +189,21 @@ export function joinMatchmaking(
   };
 }
 
-export function subscribeToGame(gameId: string, callback: (game: OnlineGameDoc | null) => void): Unsubscribe {
-  return onSnapshot(doc(db, 'games', gameId), snap => {
-    callback(snap.exists() ? (snap.data() as OnlineGameDoc) : null);
-  });
+export function subscribeToGame(
+  gameId: string,
+  callback: (game: OnlineGameDoc | null) => void,
+  onError?: (error: unknown) => void
+): Unsubscribe {
+  return onSnapshot(
+    doc(db, 'games', gameId),
+    snap => {
+      callback(snap.exists() ? (snap.data() as OnlineGameDoc) : null);
+    },
+    error => {
+      console.error('[onlineGame] subscribeToGame error:', error);
+      onError?.(error);
+    }
+  );
 }
 
 export async function submitAction(gameId: string, action: OnlineAction): Promise<void> {

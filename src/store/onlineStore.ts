@@ -46,15 +46,21 @@ interface OnlineStore {
 
 function attachGameListener(set: (partial: Partial<OnlineStore>) => void, get: () => OnlineStore, gameId: string) {
   get()._unsubscribeGame?.();
-  const unsubscribe = subscribeToGame(gameId, doc => {
-    if (!doc) return;
-    set({
-      gameDoc: doc,
-      legalMoves: computeLegalMoves(doc.gameState),
-      status: doc.status === 'waiting' ? 'waiting-for-opponent' : 'connected',
-      selectedSoldierId: null,
-    });
-  });
+  const unsubscribe = subscribeToGame(
+    gameId,
+    doc => {
+      if (!doc) return;
+      set({
+        gameDoc: doc,
+        legalMoves: computeLegalMoves(doc.gameState),
+        status: doc.status === 'waiting' ? 'waiting-for-opponent' : 'connected',
+        selectedSoldierId: null,
+      });
+    },
+    error => {
+      set({ status: 'error', errorMessage: error instanceof Error ? error.message : 'Lost connection to the game.' });
+    }
+  );
   set({ _unsubscribeGame: unsubscribe });
 }
 

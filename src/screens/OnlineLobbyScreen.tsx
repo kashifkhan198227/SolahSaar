@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import { COLORS, PLAYER_LABEL, SPACING, BORDER_RADIUS } from '../utils/theme';
 import { useOnlineStore } from '../store/onlineStore';
@@ -20,7 +20,13 @@ export default function OnlineLobbyScreen({ onConnected, onBack }: OnlineLobbySc
     if (status === 'connected') onConnected();
   }, [status]);
 
-  useEffect(() => () => { if (status !== 'connected') leaveAndReset(); }, []);
+  // Only abandon the in-progress room/search if we unmount while NOT connected
+  // (e.g. the user tapped Back). Read via a ref, not the `status` closed over
+  // at mount time — otherwise this cleanup always sees the stale initial
+  // 'idle' value and wipes the store right as we transition to the board.
+  const statusRef = useRef(status);
+  useEffect(() => { statusRef.current = status; }, [status]);
+  useEffect(() => () => { if (statusRef.current !== 'connected') leaveAndReset(); }, []);
 
   if (!FIREBASE_CONFIGURED) {
     return (
