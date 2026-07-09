@@ -17,12 +17,12 @@
  */
 
 export const FIREBASE_CONFIG = {
-  apiKey: 'REPLACE_ME',
-  authDomain: 'REPLACE_ME.firebaseapp.com',
-  projectId: 'REPLACE_ME',
-  storageBucket: 'REPLACE_ME.appspot.com',
-  messagingSenderId: 'REPLACE_ME',
-  appId: 'REPLACE_ME',
+  apiKey: 'AIzaSyAh2LQYm_P54sP6Vud8pCAnoSWiRh4FU0c',
+  authDomain: 'solahsaar.firebaseapp.com',
+  projectId: 'solahsaar',
+  storageBucket: 'solahsaar.firebasestorage.app',
+  messagingSenderId: '1018754463063',
+  appId: '1:1018754463063:web:876ff30ab3bc273ae47a12',
 };
 
 export const FIREBASE_CONFIGURED = FIREBASE_CONFIG.apiKey !== 'REPLACE_ME';
