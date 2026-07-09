@@ -4,16 +4,46 @@
     "slug": "solah-saar",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "backgroundColor": "#0D0F0A",
+    "backgroundColor": "#1B2A1E",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1B2A1E"
+    },
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "package": "com.kashifkhan198227.solahsaar",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundColor": "#1B2A1E",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
       "predictiveBackGestureEnabled": false,
       "permissions": []
     },
-    "web": {}
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "kotlinVersion": "2.1.0"
+          }
+        }
+      ]
+    ],
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "owner": "mkashifkhan82",
+    "extra": {
+      "eas": {
+        "projectId": "431abd52-9010-4e4e-9549-ea0afcadffd7"
+      }
+    }
   }
 }
