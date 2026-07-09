@@ -1,23 +1,10 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
 import Svg, { Line } from 'react-native-svg';
 import { COLORS } from '../utils/theme';
 import { NODES, LINES, ALL_NODE_IDS } from '../engine/BoardLayout';
 import { GameState, Move } from '../engine/GameEngine';
 import PawnToken from './PawnToken';
-
-// TEMPORARY: numbers each crossing point for reference while discussing board
-// layout changes. Remove once the triangle-diagonal change is settled.
-const SHOW_NODE_NUMBERS = true;
-const NODE_NUMBER: Record<string, number> = (() => {
-  const ordered = [...ALL_NODE_IDS].sort((a, b) => {
-    const ca = NODES[a], cb = NODES[b];
-    return ca.y - cb.y || ca.x - cb.x;
-  });
-  const map: Record<string, number> = {};
-  ordered.forEach((id, i) => { map[id] = i + 1; });
-  return map;
-})();
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const MARGIN = 24;
@@ -133,27 +120,6 @@ export default function Board({ gameState, legalMoves, selectedSoldierId, reviva
           </View>
         );
       })}
-
-      {SHOW_NODE_NUMBERS && ALL_NODE_IDS.map(nodeId => {
-        const p = px(nodeId);
-        const labelSize = UNIT * 0.32;
-        return (
-          <Text
-            key={`label-${nodeId}`}
-            style={[
-              styles.nodeLabel,
-              {
-                left: p.x + UNIT * 0.14,
-                top: p.y - UNIT * 0.34,
-                fontSize: labelSize * 0.55,
-                minWidth: labelSize,
-              },
-            ]}
-          >
-            {NODE_NUMBER[nodeId]}
-          </Text>
-        );
-      })}
     </View>
   );
 }
@@ -171,13 +137,5 @@ const styles = StyleSheet.create({
   },
   nodeDot: {
     opacity: 0.85,
-  },
-  nodeLabel: {
-    position: 'absolute',
-    color: '#FFEB3B',
-    fontWeight: 'bold',
-    textShadowColor: '#000',
-    textShadowOffset: { width: 0.5, height: 0.5 },
-    textShadowRadius: 1,
   },
 });

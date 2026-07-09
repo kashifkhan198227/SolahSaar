@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBar, View, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { useGameStore } from './src/store/gameStore';
+import { useGameStore, AIConfig } from './src/store/gameStore';
 import { COLORS } from './src/utils/theme';
 import { PlayerColor } from './src/engine/GameEngine';
 
@@ -20,6 +20,7 @@ export default function App() {
   const [victoryWinner, setVictoryWinner] = useState<PlayerColor | null>(null);
   const [victoryReached, setVictoryReached] = useState(false);
   const [rulesReturnScreen, setRulesReturnScreen] = useState<Screen>('home');
+  const [lastAiConfig, setLastAiConfig] = useState<AIConfig | null>(null);
 
   const { gameState, hasSavedGame, startGame, loadGame, resetGame, checkSavedGame } = useGameStore();
 
@@ -32,8 +33,9 @@ export default function App() {
     if (ok) setScreen('board');
   };
 
-  const handleStartGame = (startingPlayer?: PlayerColor) => {
-    startGame(startingPlayer);
+  const handleStartGame = (startingPlayer: PlayerColor | undefined, aiConfig: AIConfig | null) => {
+    setLastAiConfig(aiConfig);
+    startGame(startingPlayer, aiConfig);
     setScreen('board');
   };
 
@@ -45,7 +47,7 @@ export default function App() {
 
   const handlePlayAgain = () => {
     setVictoryReached(false);
-    startGame();
+    startGame(undefined, lastAiConfig);
     setScreen('board');
   };
 

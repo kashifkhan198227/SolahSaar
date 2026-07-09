@@ -6,13 +6,18 @@ import { useGameStore } from '../store/gameStore';
 import { computeRevivalTargets, deadCount, onBoardCount, PlayerColor } from '../engine/GameEngine';
 import Board from '../components/Board';
 
+const AI_MOVE_DELAY_MS = 500;
+
 interface BoardScreenProps {
   onPause: () => void;
   onVictory: (winner: PlayerColor | null) => void;
 }
 
 export default function BoardScreen({ onPause, onVictory }: BoardScreenProps) {
-  const { gameState, legalMoves, selectedSoldierId, selectSoldier, moveTo, reviveAt, saveCurrentGame } = useGameStore();
+  const {
+    gameState, legalMoves, selectedSoldierId, aiConfig, isAIThinking,
+    selectSoldier, moveTo, reviveAt, saveCurrentGame, runAIMove, isAITurn,
+  } = useGameStore();
 
   useEffect(() => {
     if (gameState?.phase === 'gameover') {
@@ -26,12 +31,20 @@ export default function BoardScreen({ onPause, onVictory }: BoardScreenProps) {
     }
   }, [gameState]);
 
+  useEffect(() => {
+    if (!gameState || gameState.phase === 'gameover' || !isAITurn()) return;
+    const timer = setTimeout(() => runAIMove(), AI_MOVE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [gameState]);
+
   if (!gameState) return null;
 
   const revivalTargets = computeRevivalTargets(gameState);
   const isReviving = gameState.phase === 'reviving';
+  const boardLocked = isAITurn() || isAIThinking;
 
   const handleNodePress = (node: string) => {
+    if (boardLocked) return;
     if (isReviving) {
       reviveAt(node);
       return;
@@ -41,16 +54,23 @@ export default function BoardScreen({ onPause, onVictory }: BoardScreenProps) {
     }
   };
 
+  const handleSoldierPress = (soldierId: number) => {
+    if (boardLocked) return;
+    selectSoldier(soldierId);
+  };
+
+  const aiLabel = (color: PlayerColor) => (aiConfig?.color === color ? ` (AI · ${aiConfig.level})` : '');
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.hud}>
         <View style={styles.playerBadge}>
           <View style={[styles.dot, { backgroundColor: COLORS.orange }]} />
-          <Text style={styles.hudText}>Orange · {onBoardCount(gameState, 'orange')} on board · {deadCount(gameState, 'orange')} out</Text>
+          <Text style={styles.hudText}>Orange{aiLabel('orange')} · {onBoardCount(gameState, 'orange')} on board · {deadCount(gameState, 'orange')} out</Text>
         </View>
         <View style={styles.playerBadge}>
           <View style={[styles.dot, { backgroundColor: COLORS.black, borderWidth: 1, borderColor: COLORS.blackRing }]} />
-          <Text style={styles.hudText}>Black · {onBoardCount(gameState, 'black')} on board · {deadCount(gameState, 'black')} out</Text>
+          <Text style={styles.hudText}>Black{aiLabel('black')} · {onBoardCount(gameState, 'black')} on board · {deadCount(gameState, 'black')} out</Text>
         </View>
         <TouchableOpacity onPress={onPause} style={styles.pauseButton}>
           <Text style={styles.pauseText}>II</Text>
@@ -64,7 +84,9 @@ export default function BoardScreen({ onPause, onVictory }: BoardScreenProps) {
           </Text>
         )}
         <Text style={styles.turnText}>
-          {isReviving
+          {isAIThinking
+            ? `${gameState.currentPlayer === 'orange' ? 'Orange' : 'Black'} (AI) is thinking…`
+            : isReviving
             ? `${gameState.reviveEligiblePlayer === 'orange' ? 'Orange' : 'Black'} reached the edge — tap an empty node to revive a soldier`
             : gameState.chainingSoldierId != null
             ? `${gameState.currentPlayer === 'orange' ? 'Orange' : 'Black'} — keep capturing!`
@@ -78,7 +100,7 @@ export default function BoardScreen({ onPause, onVictory }: BoardScreenProps) {
           legalMoves={legalMoves}
           selectedSoldierId={selectedSoldierId}
           revivalTargets={revivalTargets}
-          onSoldierPress={selectSoldier}
+          onSoldierPress={handleSoldierPress}
           onNodePress={handleNodePress}
         />
       </View>
