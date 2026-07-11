@@ -20,9 +20,11 @@ const UNIT = Math.min(availableWidth / X_UNITS, availableHeight / Y_UNITS);
 export const BOARD_WIDTH = X_UNITS * UNIT;
 export const BOARD_HEIGHT = Y_UNITS * UNIT;
 
-function px(nodeId: string) {
+function px(nodeId: string, flipped: boolean) {
   const c = NODES[nodeId];
-  return { x: c.x * UNIT, y: (c.y - Y_MIN) * UNIT };
+  const x = c.x * UNIT;
+  const y = (c.y - Y_MIN) * UNIT;
+  return flipped ? { x: X_UNITS * UNIT - x, y: Y_UNITS * UNIT - y } : { x, y };
 }
 
 const EDGES: [string, string][] = (() => {
@@ -47,9 +49,12 @@ interface BoardProps {
   revivalTargets: string[];
   onSoldierPress: (soldierId: number) => void;
   onNodePress: (node: string) => void;
+  /** Rotates the board 180° so the viewing player's own soldiers are always
+   *  nearest them (bottom of screen), regardless of which color they're playing. */
+  flipped?: boolean;
 }
 
-export default function Board({ gameState, legalMoves, selectedSoldierId, revivalTargets, onSoldierPress, onNodePress }: BoardProps) {
+export default function Board({ gameState, legalMoves, selectedSoldierId, revivalTargets, onSoldierPress, onNodePress, flipped = false }: BoardProps) {
   const targetNodes = useMemo(() => {
     if (revivalTargets.length > 0) return new Set(revivalTargets);
     return new Set(legalMoves.filter(m => m.soldierId === selectedSoldierId).map(m => m.to));
@@ -64,13 +69,13 @@ export default function Board({ gameState, legalMoves, selectedSoldierId, reviva
     <View style={[styles.board, { width: BOARD_WIDTH, height: BOARD_HEIGHT }]}>
       <Svg width={BOARD_WIDTH} height={BOARD_HEIGHT} style={StyleSheet.absoluteFill}>
         {EDGES.map(([a, b], i) => {
-          const pa = px(a), pb = px(b);
+          const pa = px(a, flipped), pb = px(b, flipped);
           return <Line key={i} x1={pa.x} y1={pa.y} x2={pb.x} y2={pb.y} stroke={COLORS.boardLines} strokeWidth={2} />;
         })}
       </Svg>
 
       {ALL_NODE_IDS.map(nodeId => {
-        const p = px(nodeId);
+        const p = px(nodeId, flipped);
         const isTarget = targetNodes.has(nodeId);
         const isCapture = captureTargets.has(nodeId);
         const NODE_HIT = UNIT * 0.6;
@@ -105,7 +110,7 @@ export default function Board({ gameState, legalMoves, selectedSoldierId, reviva
       })}
 
       {gameState.soldiers.filter(s => s.node !== null).map(soldier => {
-        const p = px(soldier.node as string);
+        const p = px(soldier.node as string, flipped);
         // Kept below 0.5*UNIT (the tightest node spacing, at the triangle
         // mid-row points) so adjacent pawns never overlap.
         const size = UNIT * 0.38;

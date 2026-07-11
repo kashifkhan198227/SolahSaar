@@ -42,6 +42,10 @@ export default function BoardScreen({ onPause, onVictory }: BoardScreenProps) {
   const revivalTargets = computeRevivalTargets(gameState);
   const isReviving = gameState.phase === 'reviving';
   const boardLocked = isAITurn() || isAIThinking;
+  // vs AI: flip so the fixed human color is always at the bottom. Pass-and-play
+  // (no AI): flip per turn so whoever's holding the device sees their own side down.
+  const viewerColor = aiConfig ? (aiConfig.color === 'orange' ? 'black' : 'orange') : gameState.currentPlayer;
+  const flipped = viewerColor === 'orange';
 
   const handleNodePress = (node: string) => {
     if (boardLocked) return;
@@ -102,6 +106,7 @@ export default function BoardScreen({ onPause, onVictory }: BoardScreenProps) {
           revivalTargets={revivalTargets}
           onSoldierPress={handleSoldierPress}
           onNodePress={handleNodePress}
+          flipped={flipped}
         />
       </View>
     </SafeAreaView>

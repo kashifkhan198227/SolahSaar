@@ -41,3 +41,6 @@ package-lock.json
 
 # local Claude Code runtime state
 .claude/scheduled_tasks.lock
+
+# downloaded EAS build artifacts
+/build-output

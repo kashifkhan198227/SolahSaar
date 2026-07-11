@@ -29,6 +29,7 @@ export default function OnlineBoardScreen({ onLeave, onVictory }: OnlineBoardScr
   const opponentColor: PlayerColor = myColor === 'orange' ? 'black' : 'orange';
   const opponentWaiting = gameDoc.guestUid === null;
   const boardLocked = !isMyTurn();
+  const flipped = myColor === 'orange';
 
   const handleNodePress = (node: string) => {
     if (boardLocked) return;
@@ -102,6 +103,7 @@ export default function OnlineBoardScreen({ onLeave, onVictory }: OnlineBoardScr
           revivalTargets={revivalTargets}
           onSoldierPress={handleSoldierPress}
           onNodePress={handleNodePress}
+          flipped={flipped}
         />
       </View>
     </SafeAreaView>
