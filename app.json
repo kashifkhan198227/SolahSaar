@@ -17,7 +17,7 @@
     },
     "android": {
       "package": "com.kashifkhan198227.solahsaar",
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundColor": "#1B2A1E",
