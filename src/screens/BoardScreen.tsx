@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, PLAYER_LABEL, SPACING, BORDER_RADIUS } from '../utils/theme';
 import { useGameStore } from '../store/gameStore';
-import { computeRevivalTargets, deadCount, onBoardCount, PlayerColor } from '../engine/GameEngine';
+import { deadCount, onBoardCount, PlayerColor } from '../engine/GameEngine';
 import Board from '../components/Board';
 
 const AI_MOVE_DELAY_MS = 500;
@@ -16,7 +16,7 @@ interface BoardScreenProps {
 export default function BoardScreen({ onPause, onVictory }: BoardScreenProps) {
   const {
     gameState, legalMoves, selectedSoldierId, aiConfig, isAIThinking,
-    selectSoldier, moveTo, reviveAt, saveCurrentGame, runAIMove, isAITurn,
+    selectSoldier, moveTo, saveCurrentGame, runAIMove, isAITurn,
   } = useGameStore();
 
   useEffect(() => {
@@ -39,20 +39,15 @@ export default function BoardScreen({ onPause, onVictory }: BoardScreenProps) {
 
   if (!gameState) return null;
 
-  const revivalTargets = computeRevivalTargets(gameState);
-  const isReviving = gameState.phase === 'reviving';
   const boardLocked = isAITurn() || isAIThinking;
   // vs AI: flip so the fixed human color is always at the bottom. Pass-and-play
   // (no AI): flip per turn so whoever's holding the device sees their own side down.
   const viewerColor = aiConfig ? (aiConfig.color === 'orange' ? 'black' : 'orange') : gameState.currentPlayer;
   const flipped = viewerColor === 'orange';
+  const forfeitedSoldier = gameState.soldiers.find(s => s.id === gameState.forfeitedSoldierId);
 
   const handleNodePress = (node: string) => {
     if (boardLocked) return;
-    if (isReviving) {
-      reviveAt(node);
-      return;
-    }
     if (selectedSoldierId !== null) {
       moveTo(node);
     }
@@ -87,11 +82,14 @@ export default function BoardScreen({ onPause, onVictory }: BoardScreenProps) {
             {PLAYER_LABEL[gameState.turnSkipped]} had no legal move — turn skipped
           </Text>
         )}
+        {forfeitedSoldier && (
+          <Text style={styles.skipText}>
+            {PLAYER_LABEL[forfeitedSoldier.color]} soldier removed — repeated the same move three times
+          </Text>
+        )}
         <Text style={styles.turnText}>
           {isAIThinking
             ? `${PLAYER_LABEL[gameState.currentPlayer]} (AI) is thinking…`
-            : isReviving
-            ? `${PLAYER_LABEL[gameState.reviveEligiblePlayer!]} reached the edge — tap an empty node to revive a soldier`
             : gameState.chainingSoldierId != null
             ? `${PLAYER_LABEL[gameState.currentPlayer]} — keep capturing!`
             : `${PLAYER_LABEL[gameState.currentPlayer]}'s turn`}
@@ -103,7 +101,6 @@ export default function BoardScreen({ onPause, onVictory }: BoardScreenProps) {
           gameState={gameState}
           legalMoves={legalMoves}
           selectedSoldierId={selectedSoldierId}
-          revivalTargets={revivalTargets}
           onSoldierPress={handleSoldierPress}
           onNodePress={handleNodePress}
           flipped={flipped}

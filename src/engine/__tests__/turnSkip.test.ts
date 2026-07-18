@@ -7,9 +7,10 @@ function makeState(soldiers: Soldier[], currentPlayer: 'orange' | 'black' = 'ora
     phase: 'playing',
     winner: null,
     lastMove: null,
-    reviveEligiblePlayer: null,
     chainingSoldierId: null,
     turnSkipped: null,
+    positionHistory: {},
+    forfeitedSoldierId: null,
   };
 }
 

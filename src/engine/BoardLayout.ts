@@ -89,6 +89,16 @@ export const LINES: string[][] = [
   ['bBR', 'bMR', 'g2_4'],
   ['bBC', 'bMC', 'g2_4'],
   ['bML', 'bMC', 'bMR'],
+
+  // Bridges through the g2_4 apex: bML-g2_4 and g2_4-g3_3 (part of the
+  // bottom-right quadrant diagonal), bMC-g2_4 and g2_4-g2_3 (part of the g2
+  // column), and bMR-g2_4 and g2_4-g1_3 (part of the bottom-left quadrant
+  // diagonal) were already each their own straight line through g2_4, but
+  // captures couldn't cross the apex from one side to the other. These make
+  // that legal: bML<->g3_3, bMC<->g2_3, bMR<->g1_3, jumping over g2_4.
+  ['bML', 'g2_4', 'g3_3'],
+  ['bMC', 'g2_4', 'g2_3'],
+  ['bMR', 'g2_4', 'g1_3'],
 ];
 
 /** node -> set of adjacent nodes (one line-step away), derived from LINES. */

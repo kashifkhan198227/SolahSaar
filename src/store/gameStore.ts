@@ -7,8 +7,6 @@ import {
   computeLegalMoves,
   legalMovesForSoldier,
   applyMove,
-  applyRevival,
-  computeRevivalTargets,
 } from '../engine/GameEngine';
 import { getAIAction, AILevel } from '../engine/AIPlayer';
 import { saveGame, loadSavedGame, clearSavedGame, loadStats, saveStats } from '../utils/storage';
@@ -29,7 +27,6 @@ interface GameStore {
   startGame: (startingPlayer?: PlayerColor, aiConfig?: AIConfig | null) => void;
   selectSoldier: (soldierId: number) => void;
   moveTo: (node: string) => void;
-  reviveAt: (node: string) => void;
   clearSelection: () => void;
   saveCurrentGame: () => Promise<void>;
   loadGame: () => Promise<boolean>;
@@ -57,8 +54,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   isAITurn: () => {
     const { gameState, aiConfig } = get();
     if (!gameState || !aiConfig) return false;
-    const acting = gameState.phase === 'reviving' ? gameState.reviveEligiblePlayer : gameState.currentPlayer;
-    return acting === aiConfig.color;
+    return gameState.currentPlayer === aiConfig.color;
   },
 
   selectSoldier: (soldierId: number) => {
@@ -87,41 +83,27 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
   },
 
-  reviveAt: (node: string) => {
-    const { gameState } = get();
-    if (!gameState || gameState.phase !== 'reviving' || get().isAITurn()) return;
-    const targets = computeRevivalTargets(gameState);
-    if (!targets.includes(node)) return;
-    const newState = applyRevival(gameState, node);
-    set({ gameState: newState, selectedSoldierId: null, legalMoves: computeLegalMoves(newState) });
-  },
-
   runAIMove: () => {
     const { gameState, aiConfig, isAIThinking } = get();
     if (!gameState || !aiConfig || isAIThinking) return;
     if (!get().isAITurn()) return;
 
     set({ isAIThinking: true });
-    const action = getAIAction(gameState, aiConfig.level);
-    if (!action) {
+    const move = getAIAction(gameState, aiConfig.level);
+    if (!move) {
       set({ isAIThinking: false });
       return;
     }
 
-    if (action.kind === 'move') {
-      const newState = applyMove(gameState, action.move);
-      set({
-        gameState: newState,
-        selectedSoldierId: newState.chainingSoldierId,
-        legalMoves: newState.phase === 'playing' ? computeLegalMoves(newState) : [],
-        isAIThinking: false,
-      });
-      if (newState.phase === 'gameover' && newState.winner) {
-        get().recordResult(newState.winner);
-      }
-    } else {
-      const newState = applyRevival(gameState, action.node);
-      set({ gameState: newState, selectedSoldierId: null, legalMoves: computeLegalMoves(newState), isAIThinking: false });
+    const newState = applyMove(gameState, move);
+    set({
+      gameState: newState,
+      selectedSoldierId: newState.chainingSoldierId,
+      legalMoves: newState.phase === 'playing' ? computeLegalMoves(newState) : [],
+      isAIThinking: false,
+    });
+    if (newState.phase === 'gameover' && newState.winner) {
+      get().recordResult(newState.winner);
     }
   },
 

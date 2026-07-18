@@ -34,10 +34,10 @@ const SECTIONS: { title: string; body: string[] }[] = [
     ],
   },
   {
-    title: 'Claiming the Dead',
+    title: 'No Stalling',
     body: [
-      "If a soldier reaches the opponent's starting edge, you may revive one dead soldier.",
-      'The revived soldier can be placed on any vacant node you choose.',
+      'A soldier cannot shuttle back and forth between the same two nodes indefinitely.',
+      'If one soldier repeats the same back-and-forth move three times in a row, it is removed from the board as a penalty.',
     ],
   },
   {
@@ -55,7 +55,6 @@ const SECTIONS: { title: string; body: string[] }[] = [
       'Favor sideways moves early to stay safe and set up future captures.',
       'Avoid over-eager captures early — focus on movement and defense first.',
       'Target isolated or poorly defended soldiers.',
-      "Race for the opponent's edge to revive lost soldiers.",
     ],
   },
 ];

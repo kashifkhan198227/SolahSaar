@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Unsubscribe } from 'firebase/firestore';
-import { PlayerColor, Move, computeLegalMoves, computeRevivalTargets, legalMovesForSoldier } from '../engine/GameEngine';
+import { PlayerColor, Move, computeLegalMoves, legalMovesForSoldier } from '../engine/GameEngine';
 import {
   OnlineGameDoc,
   createPrivateRoom,
@@ -39,7 +39,6 @@ interface OnlineStore {
   cancelSearch: () => void;
   selectSoldier: (soldierId: number) => void;
   moveTo: (node: string) => void;
-  reviveAt: (node: string) => void;
   isMyTurn: () => boolean;
   leaveAndReset: () => void;
 }
@@ -120,8 +119,7 @@ export const useOnlineStore = create<OnlineStore>((set, get) => ({
   isMyTurn: () => {
     const { gameDoc, myColor } = get();
     if (!gameDoc || !myColor) return false;
-    const acting = gameDoc.gameState.phase === 'reviving' ? gameDoc.gameState.reviveEligiblePlayer : gameDoc.gameState.currentPlayer;
-    return acting === myColor;
+    return gameDoc.gameState.currentPlayer === myColor;
   },
 
   selectSoldier: (soldierId: number) => {
@@ -138,18 +136,8 @@ export const useOnlineStore = create<OnlineStore>((set, get) => ({
     const move = legalMoves.find(m => m.soldierId === selectedSoldierId && m.to === node);
     if (!move) return;
     set({ selectedSoldierId: null });
-    submitAction(gameId, { kind: 'move', move }).catch(e => {
+    submitAction(gameId, move).catch(e => {
       set({ status: 'error', errorMessage: e instanceof Error ? e.message : 'Move failed to sync.' });
-    });
-  },
-
-  reviveAt: (node: string) => {
-    const { gameId, gameDoc } = get();
-    if (!gameId || !gameDoc || gameDoc.gameState.phase !== 'reviving' || !get().isMyTurn()) return;
-    const targets = computeRevivalTargets(gameDoc.gameState);
-    if (!targets.includes(node)) return;
-    submitAction(gameId, { kind: 'revive', node }).catch(e => {
-      set({ status: 'error', errorMessage: e instanceof Error ? e.message : 'Revival failed to sync.' });
     });
   },
 

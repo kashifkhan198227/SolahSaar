@@ -3,9 +3,6 @@ import {
   JUMP_TRIPLES,
   ORANGE_START,
   BLACK_START,
-  ORANGE_TARGET_EDGE,
-  BLACK_TARGET_EDGE,
-  ALL_NODE_IDS,
 } from './BoardLayout';
 
 export type PlayerColor = 'orange' | 'black';
@@ -16,7 +13,7 @@ export interface Soldier {
   node: string | null; // null = captured, off the board
 }
 
-export type GamePhase = 'playing' | 'reviving' | 'gameover';
+export type GamePhase = 'playing' | 'gameover';
 
 export interface Move {
   type: 'move' | 'capture';
@@ -33,19 +30,20 @@ export interface GameState {
   phase: GamePhase;
   winner: PlayerColor | null;
   lastMove: Move | null;
-  reviveEligiblePlayer: PlayerColor | null;
   /** Set right after a capture if the same soldier can capture again; only that
    *  soldier's further captures are legal until the chain runs out. */
   chainingSoldierId: number | null;
   /** Set for one state when a player had zero legal moves and their turn was
    *  auto-passed to the opponent, so the UI can surface why. Cleared on the next action. */
   turnSkipped: PlayerColor | null;
+  /** Each soldier's node-visit history, tracked only across plain (non-capture)
+   *  moves — used to detect a soldier shuttling back and forth to stall. Capped
+   *  to the last few entries since only a short tail is ever checked. */
+  positionHistory: Record<number, string[]>;
+  /** Set for one state when a soldier was forfeited for shuttling the same two
+   *  nodes three times in a row, so the UI can surface why it disappeared. */
+  forfeitedSoldierId: number | null;
 }
-
-const TARGET_EDGE: Record<PlayerColor, Set<string>> = {
-  orange: new Set(ORANGE_TARGET_EDGE),
-  black: new Set(BLACK_TARGET_EDGE),
-};
 
 export function opponentOf(color: PlayerColor): PlayerColor {
   return color === 'orange' ? 'black' : 'orange';
@@ -58,15 +56,18 @@ export function createInitialGameState(startingPlayer?: PlayerColor): GameState 
     ...BLACK_START.map(node => ({ id: id++, color: 'black' as const, node })),
   ];
   const currentPlayer = startingPlayer ?? (Math.random() < 0.5 ? 'orange' : 'black');
+  const positionHistory: Record<number, string[]> = {};
+  for (const s of soldiers) positionHistory[s.id] = [s.node as string];
   return {
     soldiers,
     currentPlayer,
     phase: 'playing',
     winner: null,
     lastMove: null,
-    reviveEligiblePlayer: null,
     chainingSoldierId: null,
     turnSkipped: null,
+    positionHistory,
+    forfeitedSoldierId: null,
   };
 }
 
@@ -126,9 +127,19 @@ export function legalMovesForSoldier(state: GameState, soldierId: number): Move[
 function hasAnyLegalMove(soldiers: Soldier[], player: PlayerColor): boolean {
   const probe: GameState = {
     soldiers, currentPlayer: player, phase: 'playing', winner: null,
-    lastMove: null, reviveEligiblePlayer: null, chainingSoldierId: null, turnSkipped: null,
+    lastMove: null, chainingSoldierId: null, turnSkipped: null,
+    positionHistory: {}, forfeitedSoldierId: null,
   };
   return computeLegalMoves(probe).length > 0;
+}
+
+/** A soldier's last 5 visited nodes read [A, B, A, B, A] — it has shuttled the
+ *  same edge back and forth three times (three visits to A) with no other move. */
+function isThreefoldShuttle(history: string[]): boolean {
+  const n = history.length;
+  if (n < 5) return false;
+  const a = history[n - 5], b = history[n - 4];
+  return a !== b && history[n - 3] === a && history[n - 2] === b && history[n - 1] === a;
 }
 
 /**
@@ -138,15 +149,21 @@ function hasAnyLegalMove(soldiers: Soldier[], player: PlayerColor): boolean {
  * draw — this can't happen from elimination alone (a player with 0 soldiers
  * already ends the game), so it only guards a genuine mutual lockout.
  */
-function startTurn(soldiers: Soldier[], candidate: PlayerColor, lastMove: Move | null): GameState {
+function startTurn(
+  soldiers: Soldier[],
+  candidate: PlayerColor,
+  lastMove: Move | null,
+  positionHistory: Record<number, string[]>,
+  forfeitedSoldierId: number | null
+): GameState {
   if (hasAnyLegalMove(soldiers, candidate)) {
-    return { soldiers, currentPlayer: candidate, phase: 'playing', winner: null, lastMove, reviveEligiblePlayer: null, chainingSoldierId: null, turnSkipped: null };
+    return { soldiers, currentPlayer: candidate, phase: 'playing', winner: null, lastMove, chainingSoldierId: null, turnSkipped: null, positionHistory, forfeitedSoldierId };
   }
   const other = opponentOf(candidate);
   if (hasAnyLegalMove(soldiers, other)) {
-    return { soldiers, currentPlayer: other, phase: 'playing', winner: null, lastMove, reviveEligiblePlayer: null, chainingSoldierId: null, turnSkipped: candidate };
+    return { soldiers, currentPlayer: other, phase: 'playing', winner: null, lastMove, chainingSoldierId: null, turnSkipped: candidate, positionHistory, forfeitedSoldierId };
   }
-  return { soldiers, currentPlayer: candidate, phase: 'gameover', winner: null, lastMove, reviveEligiblePlayer: null, chainingSoldierId: null, turnSkipped: null };
+  return { soldiers, currentPlayer: candidate, phase: 'gameover', winner: null, lastMove, chainingSoldierId: null, turnSkipped: null, positionHistory, forfeitedSoldierId };
 }
 
 export function applyMove(state: GameState, move: Move): GameState {
@@ -165,40 +182,37 @@ export function applyMove(state: GameState, move: Move): GameState {
 
   const opponentHasSoldiers = soldiers.some(s => s.color === opponent && s.node !== null);
   if (!opponentHasSoldiers) {
-    return { soldiers, currentPlayer: mover, phase: 'gameover', winner: mover, lastMove: move, reviveEligiblePlayer: null, chainingSoldierId: null, turnSkipped: null };
+    return { soldiers, currentPlayer: mover, phase: 'gameover', winner: mover, lastMove: move, chainingSoldierId: null, turnSkipped: null, positionHistory: state.positionHistory, forfeitedSoldierId: null };
   }
 
   // Chain-capture: keep going with the same soldier as long as it can capture again.
   if (move.type === 'capture') {
     const furtherCaptures = captureMovesFor({ ...state, soldiers, chainingSoldierId: null }, soldier);
     if (furtherCaptures.length > 0) {
-      return { soldiers, currentPlayer: mover, phase: 'playing', winner: null, lastMove: move, reviveEligiblePlayer: null, chainingSoldierId: soldier.id, turnSkipped: null };
+      return { soldiers, currentPlayer: mover, phase: 'playing', winner: null, lastMove: move, chainingSoldierId: soldier.id, turnSkipped: null, positionHistory: state.positionHistory, forfeitedSoldierId: null };
     }
   }
 
-  const reachedTargetEdge = TARGET_EDGE[mover].has(move.to);
-  const hasDeadSoldiers = soldiers.some(s => s.color === mover && s.node === null);
-  if (reachedTargetEdge && hasDeadSoldiers) {
-    return { soldiers, currentPlayer: mover, phase: 'reviving', winner: null, lastMove: move, reviveEligiblePlayer: mover, chainingSoldierId: null, turnSkipped: null };
+  // Anti-stalling: track a soldier's visited nodes across plain moves only —
+  // captures can't repeat (the captured piece is gone for good), so they're exempt.
+  let positionHistory = state.positionHistory;
+  let forfeitedSoldierId: number | null = null;
+  if (move.type === 'move') {
+    const prior = positionHistory[soldier.id] || [move.from];
+    const history = [...prior, move.to].slice(-5);
+    positionHistory = { ...positionHistory, [soldier.id]: history };
+    if (isThreefoldShuttle(history)) {
+      soldier.node = null;
+      forfeitedSoldierId = soldier.id;
+    }
   }
 
-  return startTurn(soldiers, opponent, move);
-}
+  const moverHasSoldiers = soldiers.some(s => s.color === mover && s.node !== null);
+  if (!moverHasSoldiers) {
+    return { soldiers, currentPlayer: mover, phase: 'gameover', winner: opponent, lastMove: move, chainingSoldierId: null, turnSkipped: null, positionHistory, forfeitedSoldierId };
+  }
 
-export function computeRevivalTargets(state: GameState): string[] {
-  if (state.phase !== 'reviving') return [];
-  const occupied = new Set(state.soldiers.filter(s => s.node !== null).map(s => s.node as string));
-  return ALL_NODE_IDS.filter(n => !occupied.has(n));
-}
-
-export function applyRevival(state: GameState, node: string): GameState {
-  if (state.phase !== 'reviving' || !state.reviveEligiblePlayer) return state;
-  const soldiers = state.soldiers.map(s => ({ ...s }));
-  const deadSoldier = soldiers.find(s => s.color === state.reviveEligiblePlayer && s.node === null);
-  if (!deadSoldier) return startTurn(soldiers, opponentOf(state.reviveEligiblePlayer), state.lastMove);
-  deadSoldier.node = node;
-
-  return startTurn(soldiers, opponentOf(state.reviveEligiblePlayer), state.lastMove);
+  return startTurn(soldiers, opponent, move, positionHistory, forfeitedSoldierId);
 }
 
 export function deadCount(state: GameState, color: PlayerColor): number {

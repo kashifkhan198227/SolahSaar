@@ -46,7 +46,6 @@ interface BoardProps {
   gameState: GameState;
   legalMoves: Move[];
   selectedSoldierId: number | null;
-  revivalTargets: string[];
   onSoldierPress: (soldierId: number) => void;
   onNodePress: (node: string) => void;
   /** Rotates the board 180° so the viewing player's own soldiers are always
@@ -54,11 +53,11 @@ interface BoardProps {
   flipped?: boolean;
 }
 
-export default function Board({ gameState, legalMoves, selectedSoldierId, revivalTargets, onSoldierPress, onNodePress, flipped = false }: BoardProps) {
-  const targetNodes = useMemo(() => {
-    if (revivalTargets.length > 0) return new Set(revivalTargets);
-    return new Set(legalMoves.filter(m => m.soldierId === selectedSoldierId).map(m => m.to));
-  }, [legalMoves, selectedSoldierId, revivalTargets]);
+export default function Board({ gameState, legalMoves, selectedSoldierId, onSoldierPress, onNodePress, flipped = false }: BoardProps) {
+  const targetNodes = useMemo(
+    () => new Set(legalMoves.filter(m => m.soldierId === selectedSoldierId).map(m => m.to)),
+    [legalMoves, selectedSoldierId]
+  );
 
   const captureTargets = useMemo(
     () => new Set(legalMoves.filter(m => m.soldierId === selectedSoldierId && m.type === 'capture').map(m => m.to)),

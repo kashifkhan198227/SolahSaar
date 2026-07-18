@@ -1,0 +1,384 @@
+<title>Solah Saar — Capture Geometry Reference</title>
+<style>
+  :root {
+    --bg: #F7F5EF;
+    --panel: #FFFFFF;
+    --border: #DDD6C4;
+    --text: #241F14;
+    --text-dim: #6B6555;
+    --accent: #9A6B22;
+    --accent-soft: #F1E4C8;
+    --mono-chip: #EFEAD9;
+    --board-bg: #1B2A1E;
+    --board-line: #FFFFFF;
+    --node-idle: #3A4A34;
+    --node-label: #CFE8CF;
+    --red: #E53935;
+    --blue: #1E88E5;
+    --gold: #C8962A;
+    --highlight: #4CAF50;
+  }
+  :root[data-theme="dark"] {
+    --bg: #14120D;
+    --panel: #1C1A14;
+    --border: #332E22;
+    --text: #EDE7D6;
+    --text-dim: #A79C82;
+    --accent: #D9A741;
+    --accent-soft: #2A2418;
+    --mono-chip: #241F16;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14120D;
+      --panel: #1C1A14;
+      --border: #332E22;
+      --text: #EDE7D6;
+      --text-dim: #A79C82;
+      --accent: #D9A741;
+      --accent-soft: #2A2418;
+      --mono-chip: #241F16;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Georgia, "Times New Roman", serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+  header {
+    margin-bottom: 28px;
+  }
+  h1 {
+    font-size: 30px;
+    font-weight: 700;
+    margin: 0 0 6px;
+    text-wrap: balance;
+    letter-spacing: 0.2px;
+  }
+  .sub {
+    font-family: Arial, Helvetica, sans-serif;
+    color: var(--text-dim);
+    font-size: 14.5px;
+    max-width: 62ch;
+    line-height: 1.55;
+    margin: 0;
+  }
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(280px, 380px) 1fr;
+    gap: 28px;
+    align-items: start;
+    margin-top: 32px;
+  }
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  .board-panel {
+    background: var(--board-bg);
+    border-radius: 14px;
+    padding: 18px;
+    position: sticky;
+    top: 24px;
+  }
+  .board-caption {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12px;
+    color: #9BB59B;
+    text-align: center;
+    margin-top: 10px;
+    letter-spacing: 0.3px;
+  }
+  svg { display: block; width: 100%; height: auto; }
+  .node-dot { cursor: pointer; transition: r 0.12s ease; }
+  .node-dot:hover { r: 10; }
+  .node-label {
+    font-family: ui-monospace, "SFMono-Regular", "Cascadia Code", Consolas, monospace;
+    font-size: 9px;
+    fill: var(--node-label);
+    pointer-events: none;
+    text-anchor: middle;
+  }
+  .edge { stroke: var(--board-line); stroke-width: 1.6; opacity: 0.85; }
+  .edge.dim { opacity: 0.16; }
+  .edge.lit { stroke: var(--highlight); stroke-width: 3; opacity: 1; }
+
+  .panel-right {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 24px;
+  }
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  .toolbar-label {
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  #selectedChip {
+    font-family: ui-monospace, "SFMono-Regular", "Cascadia Code", Consolas, monospace;
+    font-size: 13px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+  #clearBtn {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 5px 12px;
+    cursor: pointer;
+  }
+  #clearBtn:hover { border-color: var(--accent); color: var(--accent); }
+  #clearBtn:focus-visible, .node-dot:focus-visible { outline: 2px solid var(--highlight); outline-offset: 2px; }
+
+  .group-title {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.9px;
+    color: var(--text-dim);
+    margin: 22px 0 10px;
+  }
+  .group-title:first-of-type { margin-top: 0; }
+
+  .triple-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 8px;
+  }
+  .triple {
+    font-family: ui-monospace, "SFMono-Regular", "Cascadia Code", Consolas, monospace;
+    font-size: 13px;
+    background: var(--mono-chip);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: opacity 0.12s ease, border-color 0.12s ease;
+  }
+  .triple.dim { opacity: 0.25; }
+  .triple.lit { border-color: var(--highlight); background: color-mix(in srgb, var(--highlight) 14%, var(--mono-chip)); }
+  .triple .end { color: var(--text); }
+  .triple .mid { color: var(--red); font-weight: 700; }
+  .triple .arrow { color: var(--text-dim); font-size: 11px; }
+
+  footer {
+    margin-top: 34px;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Capture Geometry Reference</h1>
+    <p class="sub">Every straight line on the Solah Saar board, and every capture triple it produces (attacker on one end, victim in the middle, empty landing square on the other end — works from either direction). Click a node to see which lines and captures it belongs to.</p>
+  </header>
+
+  <div class="layout">
+    <div class="board-panel">
+      <svg id="board" viewBox="0 0 420 780"></svg>
+      <div class="board-caption">click any node to trace its capture lines</div>
+    </div>
+
+    <div class="panel-right">
+      <div class="toolbar">
+        <span class="toolbar-label">Showing</span>
+        <span id="selectedChip">all capture triples</span>
+        <button id="clearBtn" style="display:none">Clear selection</button>
+      </div>
+      <div id="groups"></div>
+    </div>
+  </div>
+
+  <footer>
+    Node IDs match the engine's <code>BoardLayout.ts</code> exactly (g{col}_{row} for the 5×5 grid, t… for the top triangle, b… for the bottom triangle) — tell me a node name or triple number and what you'd like changed.
+  </footer>
+</div>
+
+<script>
+  const NODES = {"g0_0":{"x":0,"y":0},"g1_0":{"x":1,"y":0},"g2_0":{"x":2,"y":0},"g3_0":{"x":3,"y":0},"g4_0":{"x":4,"y":0},"g0_1":{"x":0,"y":1},"g1_1":{"x":1,"y":1},"g2_1":{"x":2,"y":1},"g3_1":{"x":3,"y":1},"g4_1":{"x":4,"y":1},"g0_2":{"x":0,"y":2},"g1_2":{"x":1,"y":2},"g2_2":{"x":2,"y":2},"g3_2":{"x":3,"y":2},"g4_2":{"x":4,"y":2},"g0_3":{"x":0,"y":3},"g1_3":{"x":1,"y":3},"g2_3":{"x":2,"y":3},"g3_3":{"x":3,"y":3},"g4_3":{"x":4,"y":3},"g0_4":{"x":0,"y":4},"g1_4":{"x":1,"y":4},"g2_4":{"x":2,"y":4},"g3_4":{"x":3,"y":4},"g4_4":{"x":4,"y":4},"tTL":{"x":0,"y":-2},"tTC":{"x":2,"y":-2},"tTR":{"x":4,"y":-2},"tML":{"x":1,"y":-1},"tMC":{"x":2,"y":-1},"tMR":{"x":3,"y":-1},"bBL":{"x":0,"y":6},"bBC":{"x":2,"y":6},"bBR":{"x":4,"y":6},"bML":{"x":1,"y":5},"bMC":{"x":2,"y":5},"bMR":{"x":3,"y":5}};
+
+  const LINE_GROUPS = [
+    { title: "Grid rows", lines: [
+      ["g0_0","g1_0","g2_0","g3_0","g4_0"],
+      ["g0_1","g1_1","g2_1","g3_1","g4_1"],
+      ["g0_2","g1_2","g2_2","g3_2","g4_2"],
+      ["g0_3","g1_3","g2_3","g3_3","g4_3"],
+      ["g0_4","g1_4","g2_4","g3_4","g4_4"],
+    ]},
+    { title: "Grid columns", lines: [
+      ["g0_0","g0_1","g0_2","g0_3","g0_4"],
+      ["g1_0","g1_1","g1_2","g1_3","g1_4"],
+      ["g2_0","g2_1","g2_2","g2_3","g2_4"],
+      ["g3_0","g3_1","g3_2","g3_3","g3_4"],
+      ["g4_0","g4_1","g4_2","g4_3","g4_4"],
+    ]},
+    { title: "Quadrant diagonals", lines: [
+      ["g2_0","g1_1","g0_2"],
+      ["g2_0","g3_1","g4_2"],
+      ["g0_2","g1_3","g2_4"],
+      ["g4_2","g3_3","g2_4"],
+    ]},
+    { title: "Top triangle", lines: [
+      ["tTL","tTC","tTR"],
+      ["tTL","tML","g2_0"],
+      ["tTR","tMR","g2_0"],
+      ["tTC","tMC","g2_0"],
+      ["tML","tMC","tMR"],
+    ]},
+    { title: "Bottom triangle", lines: [
+      ["bBL","bBC","bBR"],
+      ["bBL","bML","g2_4"],
+      ["bBR","bMR","g2_4"],
+      ["bBC","bMC","g2_4"],
+      ["bML","bMC","bMR"],
+    ]},
+    { title: "Apex bridges (added)", lines: [
+      ["bML","g2_4","g3_3"],
+      ["bMC","g2_4","g2_3"],
+      ["bMR","g2_4","g1_3"],
+    ]},
+  ];
+
+  const UNIT = 90, MARGIN = 30, YMIN = -2;
+  const px = id => ({ x: MARGIN + NODES[id].x * UNIT, y: MARGIN + (NODES[id].y - YMIN) * UNIT });
+
+  // build edge list (deduped) and triple list (with group + line index for coloring)
+  const edgeSet = new Map();
+  const allTriples = [];
+  for (const group of LINE_GROUPS) {
+    for (const line of group.lines) {
+      for (let i = 0; i < line.length - 1; i++) {
+        const a = line[i], b = line[i+1];
+        const key = a < b ? a+'|'+b : b+'|'+a;
+        if (!edgeSet.has(key)) edgeSet.set(key, [a, b]);
+      }
+      for (let i = 0; i < line.length - 2; i++) {
+        allTriples.push({ group: group.title, a: line[i], mid: line[i+1], c: line[i+2] });
+      }
+    }
+  }
+
+  const svg = document.getElementById('board');
+  const svgNS = 'http://www.w3.org/2000/svg';
+  function el(tag, attrs) {
+    const e = document.createElementNS(svgNS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  const edgeEls = {};
+  for (const [key, [a, b]] of edgeSet) {
+    const pa = px(a), pb = px(b);
+    const line = el('line', { x1: pa.x, y1: pa.y, x2: pb.x, y2: pb.y, class: 'edge' });
+    svg.appendChild(line);
+    edgeEls[key] = line;
+  }
+
+  const nodeEls = {};
+  for (const id in NODES) {
+    const p = px(id);
+    const g = el('g', {});
+    const dot = el('circle', { cx: p.x, cy: p.y, r: 7, fill: 'var(--node-idle)', stroke: 'var(--board-line)', 'stroke-width': 1, class: 'node-dot', tabindex: '0', role: 'button', 'aria-label': 'node ' + id });
+    const label = el('text', { x: p.x, y: p.y - 12, class: 'node-label' });
+    label.textContent = id;
+    g.appendChild(dot);
+    g.appendChild(label);
+    svg.appendChild(g);
+    nodeEls[id] = dot;
+    dot.addEventListener('click', () => selectNode(id));
+    dot.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectNode(id); } });
+  }
+  svg.setAttribute('viewBox', '0 0 ' + (MARGIN*2 + 4*UNIT) + ' ' + (MARGIN*2 + 8*UNIT));
+
+  const groupsEl = document.getElementById('groups');
+  const tripleEls = [];
+  for (const group of LINE_GROUPS) {
+    const title = document.createElement('div');
+    title.className = 'group-title';
+    title.textContent = group.title;
+    groupsEl.appendChild(title);
+    const grid = document.createElement('div');
+    grid.className = 'triple-grid';
+    groupsEl.appendChild(grid);
+  }
+  // re-render triples into their group grids in order
+  const gridsByTitle = {};
+  Array.from(groupsEl.children).forEach((child, i) => {
+    if (child.classList.contains('triple-grid')) {
+      const titleEl = groupsEl.children[i-1];
+      gridsByTitle[titleEl.textContent] = child;
+    }
+  });
+  for (const t of allTriples) {
+    const chip = document.createElement('div');
+    chip.className = 'triple';
+    chip.innerHTML = '<span class="end">' + t.a + '</span><span class="arrow">⇄</span><span class="mid">' + t.mid + '</span><span class="arrow">⇄</span><span class="end">' + t.c + '</span>';
+    chip.dataset.nodes = [t.a, t.mid, t.c].join(',');
+    gridsByTitle[t.group].appendChild(chip);
+    tripleEls.push(chip);
+  }
+
+  const selectedChip = document.getElementById('selectedChip');
+  const clearBtn = document.getElementById('clearBtn');
+  let selected = null;
+
+  function selectNode(id) {
+    selected = (selected === id) ? null : id;
+    render();
+  }
+  clearBtn.addEventListener('click', () => { selected = null; render(); });
+
+  function render() {
+    if (!selected) {
+      selectedChip.textContent = 'all ' + allTriples.length + ' capture triples';
+      clearBtn.style.display = 'none';
+      for (const key in edgeEls) edgeEls[key].classList.remove('dim', 'lit');
+      for (const id in nodeEls) nodeEls[id].setAttribute('fill', 'var(--node-idle)');
+      tripleEls.forEach(c => c.classList.remove('dim', 'lit'));
+      return;
+    }
+    clearBtn.style.display = 'inline-block';
+    selectedChip.textContent = selected;
+    for (const id in nodeEls) nodeEls[id].setAttribute('fill', id === selected ? 'var(--gold, #C8962A)' : 'var(--node-idle)');
+    for (const key in edgeEls) {
+      const [a, b] = key.split('|');
+      const involved = a === selected || b === selected;
+      edgeEls[key].classList.toggle('dim', !involved);
+      edgeEls[key].classList.toggle('lit', involved);
+    }
+    tripleEls.forEach(c => {
+      const nodes = c.dataset.nodes.split(',');
+      const involved = nodes.includes(selected);
+      c.classList.toggle('dim', !involved);
+      c.classList.toggle('lit', involved);
+    });
+  }
+  render();
+</script>

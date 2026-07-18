@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, PLAYER_LABEL, SPACING, BORDER_RADIUS } from '../utils/theme';
 import { useOnlineStore } from '../store/onlineStore';
-import { computeRevivalTargets, deadCount, onBoardCount } from '../engine/GameEngine';
+import { deadCount, onBoardCount } from '../engine/GameEngine';
 import { PlayerColor } from '../engine/GameEngine';
 import Board from '../components/Board';
 
@@ -13,7 +13,7 @@ interface OnlineBoardScreenProps {
 }
 
 export default function OnlineBoardScreen({ onLeave, onVictory }: OnlineBoardScreenProps) {
-  const { gameDoc, legalMoves, selectedSoldierId, myColor, selectSoldier, moveTo, reviveAt, isMyTurn, leaveAndReset } = useOnlineStore();
+  const { gameDoc, legalMoves, selectedSoldierId, myColor, selectSoldier, moveTo, isMyTurn, leaveAndReset } = useOnlineStore();
 
   useEffect(() => {
     if (gameDoc?.gameState.phase === 'gameover') {
@@ -24,19 +24,14 @@ export default function OnlineBoardScreen({ onLeave, onVictory }: OnlineBoardScr
   if (!gameDoc || !myColor) return null;
 
   const { gameState } = gameDoc;
-  const revivalTargets = computeRevivalTargets(gameState);
-  const isReviving = gameState.phase === 'reviving';
   const opponentColor: PlayerColor = myColor === 'orange' ? 'black' : 'orange';
   const opponentWaiting = gameDoc.guestUid === null;
   const boardLocked = !isMyTurn();
   const flipped = myColor === 'orange';
+  const forfeitedSoldier = gameState.soldiers.find(s => s.id === gameState.forfeitedSoldierId);
 
   const handleNodePress = (node: string) => {
     if (boardLocked) return;
-    if (isReviving) {
-      reviveAt(node);
-      return;
-    }
     if (selectedSoldierId !== null) {
       moveTo(node);
     }
@@ -82,10 +77,13 @@ export default function OnlineBoardScreen({ onLeave, onVictory }: OnlineBoardScr
                 {PLAYER_LABEL[gameState.turnSkipped]} had no legal move — turn skipped
               </Text>
             )}
+            {forfeitedSoldier && (
+              <Text style={styles.skipText}>
+                {PLAYER_LABEL[forfeitedSoldier.color]} soldier removed — repeated the same move three times
+              </Text>
+            )}
             <Text style={styles.turnText}>
-              {isReviving
-                ? `${PLAYER_LABEL[gameState.reviveEligiblePlayer!]}${gameState.reviveEligiblePlayer === myColor ? ' (you)' : ''} reached the edge — tap an empty node to revive a soldier`
-                : gameState.chainingSoldierId != null
+              {gameState.chainingSoldierId != null
                 ? `${PLAYER_LABEL[gameState.currentPlayer]}${gameState.currentPlayer === myColor ? ' (you)' : ''} — keep capturing!`
                 : boardLocked
                 ? `${PLAYER_LABEL[gameState.currentPlayer]}'s turn`
@@ -100,7 +98,6 @@ export default function OnlineBoardScreen({ onLeave, onVictory }: OnlineBoardScr
           gameState={gameState}
           legalMoves={legalMoves}
           selectedSoldierId={selectedSoldierId}
-          revivalTargets={revivalTargets}
           onSoldierPress={handleSoldierPress}
           onNodePress={handleNodePress}
           flipped={flipped}

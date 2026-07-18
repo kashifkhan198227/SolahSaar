@@ -16,7 +16,7 @@ import {
   Unsubscribe,
 } from 'firebase/firestore';
 import { db, ensureSignedIn } from './firebase';
-import { GameState, Move, PlayerColor, createInitialGameState, applyMove, applyRevival, opponentOf } from '../engine/GameEngine';
+import { GameState, Move, PlayerColor, createInitialGameState, applyMove, opponentOf } from '../engine/GameEngine';
 
 export type RoomVisibility = 'private' | 'public';
 export type GameDocStatus = 'waiting' | 'active' | 'finished';
@@ -31,8 +31,6 @@ export interface OnlineGameDoc {
   status: GameDocStatus;
   gameState: GameState;
 }
-
-export type OnlineAction = { kind: 'move'; move: Move } | { kind: 'revive'; node: string };
 
 const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I — easy to read aloud
 
@@ -206,13 +204,13 @@ export function subscribeToGame(
   );
 }
 
-export async function submitAction(gameId: string, action: OnlineAction): Promise<void> {
+export async function submitAction(gameId: string, move: Move): Promise<void> {
   const gameRef = doc(db, 'games', gameId);
   await runTransaction(db, async tx => {
     const snap = await tx.get(gameRef);
     if (!snap.exists()) throw new Error('Game not found.');
     const data = snap.data() as OnlineGameDoc;
-    const newState = action.kind === 'move' ? applyMove(data.gameState, action.move) : applyRevival(data.gameState, action.node);
+    const newState = applyMove(data.gameState, move);
     tx.update(gameRef, {
       gameState: newState,
       status: newState.phase === 'gameover' ? 'finished' : 'active',
