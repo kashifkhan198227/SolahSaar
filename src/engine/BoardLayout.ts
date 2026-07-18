@@ -99,6 +99,13 @@ export const LINES: string[][] = [
   ['bML', 'g2_4', 'g3_3'],
   ['bMC', 'g2_4', 'g2_3'],
   ['bMR', 'g2_4', 'g1_3'],
+
+  // Same bridges through the g2_0 apex, mirrored for the top triangle: tML
+  // continues past g2_0 into g3_1 (not g1_1 — the diagonal direction flips
+  // top-to-bottom), tMC continues into g2_1, tMR continues into g1_1.
+  ['tML', 'g2_0', 'g3_1'],
+  ['tMC', 'g2_0', 'g2_1'],
+  ['tMR', 'g2_0', 'g1_1'],
 ];
 
 /** node -> set of adjacent nodes (one line-step away), derived from LINES. */
